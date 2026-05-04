@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<!-- saved from url=(0072)file:///C:/Users/19167/Downloads/closing-cost-calculator-final-code.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closing Cost Calculator</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687184;--blue:#173b7a;--gold:#d79a21;--line:#d9e1ef;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.cc-wrap{max-width:1180px;margin:0 auto;padding:18px;width:100%;display:block}
+.cc-hero{background:linear-gradient(135deg,var(--blue),#0b1f45);color:white;border-radius:18px;padding:22px;box-shadow:0 10px 25px rgba(0,0,0,.13)}
+.cc-hero h1{margin:0 0 6px;font-size:28px}
+.cc-hero p{margin:0;color:#dbe5ff;line-height:1.4}
+.tabs{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}
+button{border:0;border-radius:12px;padding:13px 18px;font-weight:700;cursor:pointer}
+.tab{background:#fff;color:var(--blue);border:1px solid var(--line)}
+.tab.active{background:var(--gold);color:#111}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);gap:16px;width:100%}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 18px rgba(20,30,50,.06)}
+h2{font-size:20px;margin:0 0 12px;color:var(--blue)}
+h3{font-size:16px;margin:18px 0 8px;color:#24324c;border-bottom:1px solid var(--line);padding-bottom:6px}
+.row{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;align-items:center;margin:8px 0}
+label{font-size:14px;color:#2a3448}
+input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:white}
+input[readonly]{background:#f1f5f9}
+.mini{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35}
+.feeBlock{margin:12px 0}
+.feeTop{display:grid;grid-template-columns:1fr 1.35fr;gap:10px;align-items:center;margin-bottom:6px}
+.payChoice{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.payChoice input{display:none}
+.payChoice label{text-align:center;padding:7px 5px;border:1px solid #cbd5e1;border-radius:9px;cursor:pointer;font-weight:700;font-size:11px;white-space:nowrap}
+.payChoice label[for*="_buyer"]{background:#e6f0ff;color:#0b3ea8}
+.payChoice input[id*="_buyer"]:checked + label{background:#0b3ea8;color:white}
+.payChoice label[for*="_50"]{background:#fff3e0;color:#b45309}
+.payChoice input[id*="_50"]:checked + label{background:#f97316;color:white}
+.payChoice label[for*="_seller"]{background:#e6f7ec;color:#166534}
+.payChoice input[id*="_seller"]:checked + label{background:#16a34a;color:white}
+.summary{display:grid;gap:10px}
+.sumrow{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed #d6deeb;padding:9px 0}
+.sumrow strong{font-size:17px;text-align:right}
+.grand{background:#edf6ff;border:1px solid #bfd9f4;border-radius:14px;padding:14px;margin-top:12px}
+.grand .amount{font-size:30px;font-weight:800;color:var(--blue)}
+.warn{background:#fff7e8;border:1px solid #f1d29b;padding:10px;border-radius:12px;color:#62420a;font-size:13px;margin-top:10px;line-height:1.35}
+.toggleBox{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+.impoundFields.disabled{opacity:.45;pointer-events:none}
+.hidden{display:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.primary{background:var(--blue);color:white}
+.secondary{background:#eef2f8;color:var(--blue)}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.row,.feeTop{grid-template-columns:1fr}.cc-hero h1{font-size:23px}}
+@media print{body{background:white}.tabs,.actions{display:none}.grid{grid-template-columns:1fr 1fr}.card,.cc-hero{box-shadow:none}}
+
+.cashBox{
+  border-radius:18px;
+  padding:16px;
+  margin-top:12px;
+  color:#fff;
+}
+.cashBox.green{background:linear-gradient(135deg,#128047,#0b5d34);}
+.cashBox.red{background:linear-gradient(135deg,#c0392b,#7f1d1d);}
+.cashBox .label{font-size:14px;opacity:.9;}
+.cashBox .big{font-size:32px;font-weight:900;margin-top:4px;}
+
+
+.successMsg{display:none!important;}
+</style>
+</head>
+<body>
+<div class="cc-wrap">
+<div class="cc-hero"><h1>Closing Cost Calculator</h1><p>Purchase + Refinance closing fees, prepaids, impounds, lender credits, and buyer/seller split.</p></div>
+<div class="tabs"><button class="tab active" onclick="showTab(&#39;purchase&#39;)">Purchase Closing Fees</button><button class="tab" onclick="showTab(&#39;refi&#39;)">Refinance Closing Fees</button></div>
+
+<section id="purchase">
+<div class="grid">
+<div class="card">
+<h2>Purchase Inputs</h2>
+<div class="row"><label>Purchase Price</label><input id="p_price" type="number" value="600000"></div>
+<div class="row"><label>Down Payment</label><input id="p_down" type="number" value="120000"></div>
+<div class="row"><label>Interest Rate %</label><input id="p_rate" type="number" step="0.001" value="6.5"></div>
+<div class="row"><label>Loan Amount</label><input id="p_loan" type="number" readonly=""></div>
+
+<h3>Lender / Loan Fees</h3>
+<div class="row"><label>Loan Origination</label><input id="p_origination" type="number" value="0"></div>
+<div class="row"><label>Underwriting Fee</label><input id="p_underwriting" type="number" value="1195"></div>
+<div class="row"><label>Credit Fee</label><input id="p_credit" type="number" value="132"></div>
+<div class="row"><label>Appraisal Fee</label><input id="p_appraisal" type="number" value="650"></div>
+<div class="row"><label>Lender Credit</label><input id="p_lender_credit" type="number" value="0"></div>
+
+<h3>Statewide Realty &amp; Mortgage Credit</h3>
+<div class="row"><label>Use Statewide Realty &amp; Mortgage Realtor?</label><select id="p_statewide_realtor"><option value="no">No</option><option value="yes">Yes - Apply 1% Credit</option></select></div>
+<div class="row"><label>Statewide Realty &amp; Mortgage Credit</label><input id="p_statewide_credit" type="number" readonly=""></div>
+
+<h3>Escrow / Title / Transfer Fees</h3>
+<div class="toggleBox"><div class="row"><label>Title Fee Method</label><select id="p_title_calc"><option value="manual">Manual Input</option><option value="tiered">Chicago Title Tiered Estimate</option></select></div><div class="mini">Tiered estimate is for quick estimate only. Final title quote may vary.</div></div>
+<div class="row"><label>County for Transfer Tax</label><select id="p_county_name"><option value="Alameda County">Alameda County</option><option value="Alpine County">Alpine County</option><option value="Amador County">Amador County</option><option value="Butte County">Butte County</option><option value="Calaveras County">Calaveras County</option><option value="Colusa County">Colusa County</option><option value="Contra Costa County">Contra Costa County</option><option value="Del Norte County">Del Norte County</option><option value="El Dorado County">El Dorado County</option><option value="Fresno County">Fresno County</option><option value="Glenn County">Glenn County</option><option value="Humboldt County">Humboldt County</option><option value="Imperial County">Imperial County</option><option value="Inyo County">Inyo County</option><option value="Kern County">Kern County</option><option value="Kings County">Kings County</option><option value="Lake County">Lake County</option><option value="Lassen County">Lassen County</option><option value="Los Angeles County">Los Angeles County</option><option value="Madera County">Madera County</option><option value="Marin County">Marin County</option><option value="Mariposa County">Mariposa County</option><option value="Mendocino County">Mendocino County</option><option value="Merced County">Merced County</option><option value="Modoc County">Modoc County</option><option value="Mono County">Mono County</option><option value="Monterey County">Monterey County</option><option value="Napa County">Napa County</option><option value="Nevada County">Nevada County</option><option value="Orange County">Orange County</option><option value="Placer County">Placer County</option><option value="Plumas County">Plumas County</option><option value="Riverside County">Riverside County</option><option value="Sacramento County">Sacramento County</option><option value="San Benito County">San Benito County</option><option value="San Bernardino County">San Bernardino County</option><option value="San Diego County">San Diego County</option><option value="San Francisco County">San Francisco County</option><option value="San Joaquin County">San Joaquin County</option><option value="San Luis Obispo County">San Luis Obispo County</option><option value="San Mateo County">San Mateo County</option><option value="Santa Barbara County">Santa Barbara County</option><option value="Santa Clara County">Santa Clara County</option><option value="Santa Cruz County">Santa Cruz County</option><option value="Shasta County">Shasta County</option><option value="Sierra County">Sierra County</option><option value="Siskiyou County">Siskiyou County</option><option value="Solano County">Solano County</option><option value="Sonoma County">Sonoma County</option><option value="Stanislaus County">Stanislaus County</option><option value="Sutter County">Sutter County</option><option value="Tehama County">Tehama County</option><option value="Trinity County">Trinity County</option><option value="Tulare County">Tulare County</option><option value="Tuolumne County">Tuolumne County</option><option value="Ventura County">Ventura County</option><option value="Yolo County">Yolo County</option><option value="Yuba County">Yuba County</option></select></div>
+<div class="row"><label>City for Transfer Tax</label><select id="p_city_name"><option value="Citrus Heights">Citrus Heights</option><option value="Elk Grove">Elk Grove</option><option value="Folsom">Folsom</option><option value="Galt">Galt</option><option value="Isleton">Isleton</option><option value="Rancho Cordova">Rancho Cordova</option><option value="Sacramento">Sacramento</option><option value="Unincorporated / County Only">Unincorporated / County Only</option></select></div>
+<div class="mini">Transfer tax formula: Purchase Price × City/County Rate ÷ 1,000. Example Sacramento at $500,000: City $1,375 and County $550.</div>
+
+<div class="feeBlock">
+ <div class="feeTop"><label>Escrow Settlement Fee</label><div class="payChoice" data-target="p_escrow_split">
+  <input type="radio" name="p_escrow_radio" id="p_escrow_50" value="50"><label for="p_escrow_50">50/50</label>
+  <input type="radio" name="p_escrow_radio" id="p_escrow_buyer" value="buyer" checked=""><label for="p_escrow_buyer">Buyer</label>
+  <input type="radio" name="p_escrow_radio" id="p_escrow_seller" value="seller"><label for="p_escrow_seller">Seller</label>
+  <input type="hidden" id="p_escrow_split" value="buyer"></div></div>
+ <input id="p_escrow" type="number" value="1500">
+</div>
+
+<div class="row"><label>Lender Title Fee</label><input id="p_lender_title" type="number" value="900"></div>
+
+<div class="feeBlock">
+ <div class="feeTop"><label>Owner Title Fee</label><div class="payChoice" data-target="p_owner_title_split">
+  <input type="radio" name="p_owner_radio" id="p_owner_50" value="50"><label for="p_owner_50">50/50</label>
+  <input type="radio" name="p_owner_radio" id="p_owner_buyer" value="buyer"><label for="p_owner_buyer">Buyer</label>
+  <input type="radio" name="p_owner_radio" id="p_owner_seller" value="seller" checked=""><label for="p_owner_seller">Seller</label>
+  <input type="hidden" id="p_owner_title_split" value="seller"></div></div>
+ <input id="p_owner_title" type="number" value="0">
+</div>
+
+<div class="row"><label>Mobile Notary</label><input id="p_notary" type="number" value="250"></div>
+<div class="row"><label>Loan Tie Fee</label><input id="p_tie" type="number" value="250"></div>
+
+<div class="feeBlock">
+ <div class="feeTop"><label>County Transfer Tax</label><div class="payChoice" data-target="p_county_tax_split">
+  <input type="radio" name="p_county_radio" id="p_county_50" value="50"><label for="p_county_50">50/50</label>
+  <input type="radio" name="p_county_radio" id="p_county_buyer" value="buyer"><label for="p_county_buyer">Buyer</label>
+  <input type="radio" name="p_county_radio" id="p_county_seller" value="seller" checked=""><label for="p_county_seller">Seller</label>
+  <input type="hidden" id="p_county_tax_split" value="seller"></div></div>
+ <input id="p_county_tax" type="number" value="0" title="Shows buyer share based on selected Buyer/Seller/50-50 option">
+</div>
+
+<div class="feeBlock">
+ <div class="feeTop"><label>City Transfer Tax</label><div class="payChoice" data-target="p_city_tax_split">
+  <input type="radio" name="p_city_radio" id="p_city_50" value="50"><label for="p_city_50">50/50</label>
+  <input type="radio" name="p_city_radio" id="p_city_buyer" value="buyer"><label for="p_city_buyer">Buyer</label>
+  <input type="radio" name="p_city_radio" id="p_city_seller" value="seller" checked=""><label for="p_city_seller">Seller</label>
+  <input type="hidden" id="p_city_tax_split" value="seller"></div></div>
+ <input id="p_city_tax" type="number" value="0" title="Shows buyer share based on selected Buyer/Seller/50-50 option">
+</div>
+
+<h3>Liabilities to Pay Off (Cash to Close)</h3>
+<div class="row"><label>Credit Cards Payoff</label><input id="p_cc_payoff" type="number" value="0"></div>
+<div class="row"><label>Car Loan Payoff</label><input id="p_car_payoff" type="number" value="0"></div>
+
+<h3>Prepaids + Impounds</h3>
+
+<div class="toggleBox"><div class="row"><label>Escrow / Impound Account</label><select id="p_escrow_option"><option value="impounds">Impounds Collected</option><option value="waived">Escrow Waived / No Impounds</option></select></div></div>
+<div id="p_impound_fields" class="impoundFields">
+<div class="row"><label>Closing / Funding Month</label><select id="p_close_month"><option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September">September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option></select></div>
+<div class="row"><label>Closing Date</label><input id="p_closing_date" type="date"></div>
+<div class="row"><label>First Payment Month</label><select id="p_first_payment"><option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September">September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option></select></div>
+<div class="row"><label>Tax Impound Months</label><input id="p_tax_months" type="number" value="4"></div>
+<div class="row"><label>Property Tax Rate % of Purchase Price</label><input id="p_tax_rate" type="number" step="0.001" value="1.25"></div>
+<div class="row"><label>Monthly Home Insurance</label><input id="p_ins_monthly" type="number" value="150"></div>
+<div class="row"><label>Insurance Impound Months</label><input id="p_ins_months" type="number" value="14"></div>
+</div>
+<div class="row"><label>Prepaid Interest Days</label><input id="p_interest_days" type="number" value="15"></div>
+</div>
+
+<div class="card">
+<h2>Purchase Estimate</h2>
+<div class="summary" id="p_summary">
+<div class="sumrow"><span>Loan Amount</span><strong>$480,000.00</strong></div>
+<div class="sumrow"><span>Lender / Loan Fees</span><strong>$1,977.00</strong></div>
+<div class="sumrow"><span>Buyer Escrow / Title / Transfer Share</span><strong>$2,900.00</strong></div>
+<div class="sumrow"><span>Seller Paid Items</span><strong>$660.00</strong></div>
+<div class="sumrow"><span>Property Tax Impounds</span><strong>$2,500.00</strong></div>
+<div class="sumrow"><span>Home Insurance Impounds</span><strong>$2,100.00</strong></div>
+<div class="sumrow"><span>Prepaid Interest (28 days)</span><strong>$2,393.42</strong></div>
+<div class="sumrow"><span>Lender Credit</span><strong>-$0.00</strong></div>
+
+<div class="sumrow"><span>Daily Interest</span><strong>$85.48</strong></div></div>
+<div class="grand"><div>Buyer Estimated Closing Fees + Prepaids + Impounds</div><div class="amount" id="p_total">$11,870.42</div></div>
+<div class="grand" style="background:#fff7e8;border-color:#f1d29b;"><div>Seller Paid Items Estimate</div><div class="amount" id="p_seller_total">$660.00</div></div>
+
+</div>
+<div class="warn">Buyer/Seller splits are estimates only and must match contract, escrow instructions, and final Closing Disclosure.</div>
+<div class="actions"><button class="primary" onclick="window.print()">Print / Save PDF</button><button class="secondary" onclick="location.reload()">Reset Defaults</button></div>
+</div>
+</section></div>
+
+
+<section id="refi" class="hidden">
+<div class="grid">
+<div class="card">
+<h2>Refinance Inputs</h2>
+<h3>Refinance Structure</h3>
+<div class="row"><label>Refinance Type</label>
+<select id="r_type">
+<option value="rate_term">Rate &amp; Term</option>
+<option value="cash_out">Cash-Out</option>
+</select></div>
+
+<h3>Existing Loan</h3>
+<div class="row"><label>Current Loan Balance</label><input id="r_old_loan" type="number" value="450000"></div>
+<div class="row"><label>Current Interest Rate %</label><input id="r_old_rate" type="number" value="5.5"></div>
+
+<div class="row"><label>New Loan Amount</label><input id="r_loan" type="number" value="500000"></div>
+<div class="row"><label>New Interest Rate %</label><input id="r_rate" type="number" step="0.001" value="6.25"></div>
+<h3>Lender / Loan Fees</h3>
+<div class="row"><label>Loan Origination</label><input id="r_origination" type="number" value="0"></div>
+<div class="row"><label>Underwriting Fee</label><input id="r_underwriting" type="number" value="1195"></div>
+<div class="row"><label>Credit Fee</label><input id="r_credit" type="number" value="132"></div>
+<div class="row"><label>Appraisal Fee</label><input id="r_appraisal" type="number" value="650"></div>
+<div class="row"><label>Lender Credit</label><input id="r_lender_credit" type="number" value="0"></div>
+
+<h3>Liabilities to Pay Off</h3>
+<div class="row"><label>Credit Cards Payoff</label><input id="r_cc_payoff" type="number" value="0"></div>
+<div class="row"><label>Car Loan Payoff</label><input id="r_car_payoff" type="number" value="0"></div>
+
+<h3>Escrow / Title Fees</h3>
+
+<div class="row"><label>Escrow Settlement Fee</label><input id="r_escrow" type="number" value="950"></div>
+<div class="row"><label>Lender Title Fee</label><input id="r_lender_title" type="number" value="850"></div>
+
+<div class="row"><label>Mobile Notary</label><input id="r_notary" type="number" value="250"></div>
+<h3>Prepaids + Impounds</h3>
+<div class="toggleBox"><div class="row"><label>Escrow / Impound Account</label><select id="r_escrow_option"><option value="impounds">Impounds Collected</option><option value="waived">Escrow Waived / No Impounds</option></select></div></div>
+<div id="r_impound_fields" class="impoundFields">
+<div class="row"><label>Annual Property Taxes - Manual</label><input id="r_annual_tax" type="number" value="7000"></div>
+<div class="row"><label>Closing / Funding Month</label><select id="r_close_month"><option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September">September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option></select></div>
+<div class="row"><label>Closing Date</label><input id="r_closing_date" type="date"></div>
+<div class="row"><label>First Payment Month</label><select id="r_first_payment"><option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September">September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option></select></div>
+<div class="row"><label>Tax Impound Months</label><input id="r_tax_months" type="number" value="4"></div>
+<div class="row"><label>Monthly Home Insurance</label><input id="r_ins_monthly" type="number" value="150"></div>
+<div class="row"><label>Insurance Impound Months</label><input id="r_ins_months" type="number" value="14"></div>
+</div>
+<div class="row"><label>Prepaid Interest Days</label><input id="r_interest_days" type="number" value="15"></div>
+</div>
+<div class="card">
+<h2>Refinance Estimate</h2>
+<div class="summary" id="r_summary">
+<div class="sumrow"><span>New Loan Amount</span><strong>$500,000.00</strong></div>
+<div class="sumrow"><span>Lender / Loan Fees</span><strong>$1,977.00</strong></div>
+<div class="sumrow"><span>Escrow / Title Fees</span><strong>$2,050.00</strong></div>
+<div class="sumrow"><span>Property Tax Impounds</span><strong>$2,333.33</strong></div>
+<div class="sumrow"><span>Home Insurance Impounds</span><strong>$2,100.00</strong></div>
+<div class="sumrow"><span>Prepaid Interest - Current Loan (4 days)</span><strong>$271.23</strong></div>
+<div class="sumrow"><span>Prepaid Interest - New Loan (27 days)</span><strong>$2,311.64</strong></div>
+<div class="sumrow"><span>Lender Credit</span><strong>-$0.00</strong></div></div>
+<div class="grand"><div>Total Estimated Refinance Fees + Prepaids + Impounds</div><div class="amount" id="r_total">$11,043.21</div></div>
+<div id="r_cash_box" class="cashBox green" style="display:none;">
+  <div class="label" id="r_cash_label">Cash-Out After Paying Existing Loan &amp; Closing Costs</div>
+  <div class="big" id="r_cash_amount">$0</div>
+</div>
+
+</div>
+</div>
+
+</section>
+
+
+<script>
+const transferTaxRates = {"Alameda County":{"Alameda":{"city":12.0,"county":1.1},"Albany":{"city":11.5,"county":1.1},"Berkeley":{"city":15.0,"county":1.1},"Dublin":{"city":0.55,"county":0.55},"Emeryville":{"city":0.55,"county":0.55},"Fremont":{"city":0.55,"county":0.55},"Hayward":{"city":4.5,"county":1.1},"Livermore":{"city":0.55,"county":0.55},"Newark":{"city":0.55,"county":0.55},"Oakland":{"city":15.0,"county":1.1},"Piedmont":{"city":13.0,"county":1.1},"Pleasanton":{"city":0.55,"county":0.55},"San Leandro":{"city":6.0,"county":1.1},"Unincorporated / County Only":{"city":0,"county":1.1},"Union City":{"city":0.55,"county":0.55}},"Alpine County":{"Unincorporated / County Only":{"city":0,"county":1.1}},"Amador County":{"Amador":{"city":0.55,"county":0.55},"Ione":{"city":0.55,"county":0.55},"Jackson":{"city":0.55,"county":0.55},"Plymouth":{"city":0.55,"county":0.55},"Sutter Creek":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Butte County":{"Biggs":{"city":0.55,"county":0.55},"Chico":{"city":0.55,"county":0.55},"Gridley":{"city":0.55,"county":0.55},"Oroville":{"city":0.55,"county":0.55},"Paradise":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Calaveras County":{"Angels Camp":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Colusa County":{"Colusa":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Williams":{"city":0.55,"county":0.55}},"Contra Costa County":{"Antioch":{"city":0.55,"county":0.55},"Brentwood":{"city":0.55,"county":0.55},"Clayton":{"city":0.55,"county":0.55},"Concord":{"city":0.55,"county":0.55},"Danville":{"city":0.55,"county":0.55},"El Cerrito":{"city":0.55,"county":0.55},"Hercules":{"city":0.55,"county":0.55},"Lafayette":{"city":0.55,"county":0.55},"Martinez":{"city":0.55,"county":0.55},"Moraga":{"city":0.55,"county":0.55},"Oakley":{"city":0.55,"county":0.55},"Orinda":{"city":0.55,"county":0.55},"Pinole":{"city":0.55,"county":0.55},"Pittsburg":{"city":0.55,"county":0.55},"Pleasant Hill":{"city":0.55,"county":0.55},"Richmond":{"city":7.0,"county":1.1},"San Pablo":{"city":0.55,"county":0.55},"San Ramon":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Walnut Creek":{"city":0.55,"county":0.55}},"Del Norte County":{"Crescent City":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"El Dorado County":{"Placerville":{"city":0.55,"county":0.55},"South Lake Tahoe":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Fresno County":{"Clovis":{"city":0.55,"county":0.55},"Coalinga":{"city":0.55,"county":0.55},"Firebaugh":{"city":0.55,"county":0.55},"Fowler":{"city":0.55,"county":0.55},"Fresno":{"city":0.55,"county":0.55},"Huron":{"city":0.55,"county":0.55},"Kerman":{"city":0.55,"county":0.55},"Kingsburg":{"city":0.55,"county":0.55},"Mendota":{"city":0.55,"county":0.55},"Orange Cove":{"city":0.55,"county":0.55},"Parlier":{"city":0.55,"county":0.55},"Reedley":{"city":0.55,"county":0.55},"San Joaquin":{"city":0.55,"county":0.55},"Sanger":{"city":0.55,"county":0.55},"Selma":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Glenn County":{"Orland":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Willows":{"city":0.55,"county":0.55}},"Humboldt County":{"Arcata":{"city":0.55,"county":0.55},"Blue Lake":{"city":0.55,"county":0.55},"Eureka":{"city":0.55,"county":0.55},"Ferndale":{"city":0.55,"county":0.55},"Fortuna":{"city":0.55,"county":0.55},"Rio Dell":{"city":0.55,"county":0.55},"Trinidad":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Imperial County":{"Brawley":{"city":0.55,"county":0.55},"Calexico":{"city":0.55,"county":0.55},"Calipatria":{"city":0.55,"county":0.55},"El Centro":{"city":0.55,"county":0.55},"Holtville":{"city":0.55,"county":0.55},"Imperial":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Westmorland":{"city":0.55,"county":0.55}},"Inyo County":{"Bishop":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Kern County":{"Arvin":{"city":0.55,"county":0.55},"Bakersfield":{"city":0.55,"county":0.55},"California City":{"city":0.55,"county":0.55},"Delano":{"city":0.55,"county":0.55},"Maricopa":{"city":0.55,"county":0.55},"Mcfarland":{"city":0.55,"county":0.55},"Ridgecrest":{"city":0.55,"county":0.55},"Shafter":{"city":0.55,"county":0.55},"Taft":{"city":0.55,"county":0.55},"Tehachapi":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Wasco":{"city":0.55,"county":0.55}},"Kings County":{"Avenal":{"city":0.55,"county":0.55},"Corcoran":{"city":0.55,"county":0.55},"Hanford":{"city":0.55,"county":0.55},"Lemoore":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Lake County":{"Clearlake":{"city":0.55,"county":0.55},"Lakeport":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Lassen County":{"Susanville":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Los Angeles County":{"Agoura Hills":{"city":0.55,"county":0.55},"Alhambra":{"city":0.55,"county":0.55},"Arcadia":{"city":0.55,"county":0.55},"Artesia":{"city":0.55,"county":0.55},"Avalon":{"city":0.55,"county":0.55},"Azusa":{"city":0.55,"county":0.55},"Baldwin Park":{"city":0.55,"county":0.55},"Bell":{"city":0.55,"county":0.55},"Bell Gardens":{"city":0.55,"county":0.55},"Bellflower":{"city":0.55,"county":0.55},"Beverly Hills":{"city":0.55,"county":0.55},"Bradbury":{"city":0.55,"county":0.55},"Burbank":{"city":0.55,"county":0.55},"Calabasas":{"city":0.55,"county":0.55},"Carson":{"city":0.55,"county":0.55},"Cerritos":{"city":0.55,"county":0.55},"Claremont":{"city":0.55,"county":0.55},"Commerce":{"city":0.55,"county":0.55},"Compton":{"city":0.55,"county":0.55},"Covina":{"city":0.55,"county":0.55},"Cudahy":{"city":0.55,"county":0.55},"Culver City":{"city":4.5,"county":1.1},"Diamond Bar":{"city":0.55,"county":0.55},"Downey":{"city":0.55,"county":0.55},"Duarte":{"city":0.55,"county":0.55},"El Monte":{"city":0.55,"county":0.55},"El Segundo":{"city":0.55,"county":0.55},"Gardena":{"city":0.55,"county":0.55},"Glendale":{"city":0.55,"county":0.55},"Glendora":{"city":0.55,"county":0.55},"Hawaiian Gardens":{"city":0.55,"county":0.55},"Hawthorne":{"city":0.55,"county":0.55},"Hermosa Beach":{"city":0.55,"county":0.55},"Hidden Hills":{"city":0.55,"county":0.55},"Huntington Park":{"city":0.55,"county":0.55},"Industry":{"city":0.55,"county":0.55},"Inglewood":{"city":0.55,"county":0.55},"Irwindale":{"city":0.55,"county":0.55},"La Canada Flintridge":{"city":0.55,"county":0.55},"La Habra Heights":{"city":0.55,"county":0.55},"La Mirada":{"city":0.55,"county":0.55},"La Puente":{"city":0.55,"county":0.55},"La Verne":{"city":0.55,"county":0.55},"Lakewood":{"city":0.55,"county":0.55},"Lancaster":{"city":0.55,"county":0.55},"Lawndale":{"city":0.55,"county":0.55},"Lomita":{"city":0.55,"county":0.55},"Long Beach":{"city":0.55,"county":0.55},"Los Angeles":{"city":4.5,"county":1.1},"Lynwood":{"city":0.55,"county":0.55},"Malibu":{"city":0.55,"county":0.55},"Manhattan Beach":{"city":0.55,"county":0.55},"Maywood":{"city":0.55,"county":0.55},"Monrovia":{"city":0.55,"county":0.55},"Montebello":{"city":0.55,"county":0.55},"Monterey Park":{"city":0.55,"county":0.55},"Norwalk":{"city":0.55,"county":0.55},"Palmdale":{"city":0.55,"county":0.55},"Palos Verdes Estates":{"city":0.55,"county":0.55},"Paramount":{"city":0.55,"county":0.55},"Pasadena":{"city":0.55,"county":0.55},"Pico Rivera":{"city":0.55,"county":0.55},"Pomona":{"city":2.2,"county":1.1},"Rancho Palos Verdes":{"city":0.55,"county":0.55},"Redondo Beach":{"city":2.2,"county":1.1},"Rolling Hills":{"city":0.55,"county":0.55},"Rolling Hills Estates":{"city":0.55,"county":0.55},"Rosemead":{"city":0.55,"county":0.55},"San Dimas":{"city":0.55,"county":0.55},"San Fernando":{"city":0.55,"county":0.55},"San Gabriel":{"city":0.55,"county":0.55},"San Marino":{"city":0.55,"county":0.55},"Santa Clarita":{"city":0.55,"county":0.55},"Santa Fe Springs":{"city":0.55,"county":0.55},"Santa Monica":{"city":3.0,"county":1.1},"Sierra Madre":{"city":0.55,"county":0.55},"Signal Hill":{"city":0.55,"county":0.55},"South El Monte":{"city":0.55,"county":0.55},"South Gate":{"city":0.55,"county":0.55},"South Pasadena":{"city":0.55,"county":0.55},"Temple City":{"city":0.55,"county":0.55},"Torrance":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Vernon":{"city":0.55,"county":0.55},"Walnut":{"city":0.55,"county":0.55},"West Covina":{"city":0.55,"county":0.55},"West Hollywood":{"city":0.55,"county":0.55},"Westlake Village":{"city":0.55,"county":0.55},"Whittier":{"city":0.55,"county":0.55}},"Madera County":{"Chowchilla":{"city":0.55,"county":0.55},"Madera":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Marin County":{"Belvedere":{"city":0.55,"county":0.55},"Corte Madera":{"city":0.55,"county":0.55},"Fairfax":{"city":0.55,"county":0.55},"Larkspur":{"city":0.55,"county":0.55},"Mill Valley":{"city":0.55,"county":0.55},"Novato":{"city":0.55,"county":0.55},"Ross":{"city":0.55,"county":0.55},"San Anselmo":{"city":0.55,"county":0.55},"San Rafael":{"city":2.0,"county":1.1},"Sausalito":{"city":0.55,"county":0.55},"Tiburon":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Mariposa County":{"Unincorporated / County Only":{"city":0,"county":1.1}},"Mendocino County":{"Fort Bragg":{"city":0.55,"county":0.55},"Point Arena":{"city":0.55,"county":0.55},"Ukiah":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Willits":{"city":0.55,"county":0.55}},"Merced County":{"Atwater":{"city":0.55,"county":0.55},"Dos Palos":{"city":0.55,"county":0.55},"Gustine":{"city":0.55,"county":0.55},"Livingston":{"city":0.55,"county":0.55},"Los Banos":{"city":0.55,"county":0.55},"Merced":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Modoc County":{"Alturas":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Mono County":{"Mammoth Lakes":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Monterey County":{"Carmel-by-the-Sea":{"city":0.55,"county":0.55},"Del Rey Oaks":{"city":0.55,"county":0.55},"Gonzales":{"city":0.55,"county":0.55},"Greenfield":{"city":0.55,"county":0.55},"King City":{"city":0.55,"county":0.55},"Marina":{"city":0.55,"county":0.55},"Monterey":{"city":0.55,"county":0.55},"Pacific Grove":{"city":0.55,"county":0.55},"Salinas":{"city":0.55,"county":0.55},"Sand City":{"city":0.55,"county":0.55},"Seaside":{"city":0.55,"county":0.55},"Soledad":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Napa County":{"American Canyon":{"city":0.55,"county":0.55},"Calistoga":{"city":0.55,"county":0.55},"Napa":{"city":0.55,"county":0.55},"Saint Helena":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Yountville":{"city":0.55,"county":0.55}},"Nevada County":{"Grass Valley":{"city":0.55,"county":0.55},"Nevada City":{"city":0.55,"county":0.55},"Truckee":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Orange County":{"Aliso Viejo":{"city":0.55,"county":0.55},"Anaheim":{"city":0.55,"county":0.55},"Brea":{"city":0.55,"county":0.55},"Buena Park":{"city":0.55,"county":0.55},"Costa Mesa":{"city":0.55,"county":0.55},"Cypress":{"city":0.55,"county":0.55},"Dana Point":{"city":0.55,"county":0.55},"Fountain Valley":{"city":0.55,"county":0.55},"Fullerton":{"city":0.55,"county":0.55},"Garden Grove":{"city":0.55,"county":0.55},"Huntington Beach":{"city":0.55,"county":0.55},"Irvine":{"city":0.55,"county":0.55},"La Habra":{"city":0.55,"county":0.55},"La Palma":{"city":0.55,"county":0.55},"Laguna Beach":{"city":0.55,"county":0.55},"Laguna Hills":{"city":0.55,"county":0.55},"Laguna Niguel":{"city":0.55,"county":0.55},"Lake Forest":{"city":0.55,"county":0.55},"Los Alamitos":{"city":0.55,"county":0.55},"Mission Viejo":{"city":0.55,"county":0.55},"Newport Beach":{"city":0.55,"county":0.55},"Orange":{"city":0.55,"county":0.55},"Placentia":{"city":0.55,"county":0.55},"Rancho Santa Margarita":{"city":0.55,"county":0.55},"San Clemente":{"city":0.55,"county":0.55},"San Juan Capistrano":{"city":0.55,"county":0.55},"Santa Ana":{"city":0.55,"county":0.55},"Seal Beach":{"city":0.55,"county":0.55},"Stanton":{"city":0.55,"county":0.55},"Tustin":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Villa Park":{"city":0.55,"county":0.55},"Westminster":{"city":0.55,"county":0.55},"Yorba Linda":{"city":0.55,"county":0.55}},"Placer County":{"Auburn":{"city":0.55,"county":0.55},"Colfax":{"city":0.55,"county":0.55},"Lincoln":{"city":0.55,"county":0.55},"Loomis":{"city":0.55,"county":0.55},"Rocklin":{"city":0.55,"county":0.55},"Roseville":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Plumas County":{"Portola":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Riverside County":{"Banning":{"city":0.55,"county":0.55},"Beaumont":{"city":0.55,"county":0.55},"Blythe":{"city":0.55,"county":0.55},"Calimesa":{"city":0.55,"county":0.55},"Canyon Lake":{"city":0.55,"county":0.55},"Cathedral City":{"city":0.55,"county":0.55},"Coachella":{"city":0.55,"county":0.55},"Corona":{"city":0.55,"county":0.55},"Desert Hot Springs":{"city":0.55,"county":0.55},"Eastvale":{"city":0.55,"county":0.55},"Hemet":{"city":0.55,"county":0.55},"Indian Wells":{"city":0.55,"county":0.55},"Indio":{"city":0.55,"county":0.55},"Jurupa Valley":{"city":0.55,"county":0.55},"La Quinta":{"city":0.55,"county":0.55},"Lake Elsinore":{"city":0.55,"county":0.55},"Menifee":{"city":0.55,"county":0.55},"Moreno Valley":{"city":0.55,"county":0.55},"Murrieta":{"city":0.55,"county":0.55},"Norco":{"city":0.55,"county":0.55},"Palm Desert":{"city":0.55,"county":0.55},"Palm Springs":{"city":0.55,"county":0.55},"Perris":{"city":0.55,"county":0.55},"Rancho Mirage":{"city":0.55,"county":0.55},"Riverside":{"city":1.1,"county":1.1},"San Jacinto":{"city":0.55,"county":0.55},"Temecula":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Wildomar":{"city":0.55,"county":0.55}},"Sacramento County":{"Citrus Heights":{"city":0.55,"county":0.55},"Elk Grove":{"city":0.55,"county":0.55},"Folsom":{"city":0.55,"county":0.55},"Galt":{"city":0.55,"county":0.55},"Isleton":{"city":0.55,"county":0.55},"Rancho Cordova":{"city":0.55,"county":0.55},"Sacramento":{"city":2.75,"county":1.1},"Unincorporated / County Only":{"city":0,"county":1.1}},"San Benito County":{"Hollister":{"city":0.55,"county":0.55},"San Juan Bautista":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"San Bernardino County":{"Adelanto":{"city":0.55,"county":0.55},"Apple Valley":{"city":0.55,"county":0.55},"Barstow":{"city":0.55,"county":0.55},"Big Bear Lake":{"city":0.55,"county":0.55},"Chino":{"city":0.55,"county":0.55},"Chino Hills":{"city":0.55,"county":0.55},"Colton":{"city":0.55,"county":0.55},"Fontana":{"city":0.55,"county":0.55},"Grand Terrace":{"city":0.55,"county":0.55},"Hesperia":{"city":0.55,"county":0.55},"Highland":{"city":0.55,"county":0.55},"Laguna Woods":{"city":0.55,"county":0.55},"Loma Linda":{"city":0.55,"county":0.55},"Montclair":{"city":0.55,"county":0.55},"Needles":{"city":0.55,"county":0.55},"Ontario":{"city":0.55,"county":0.55},"Rancho Cucamonga":{"city":0.55,"county":0.55},"Redlands":{"city":0.55,"county":0.55},"Rialto":{"city":0.55,"county":0.55},"San Bernardino":{"city":0.55,"county":0.55},"Twentynine Palms":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Upland":{"city":0.55,"county":0.55},"Victorville":{"city":0.55,"county":0.55},"Yucaipa":{"city":0.55,"county":0.55},"Yucca Valley":{"city":0.55,"county":0.55}},"San Diego County":{"Carlsbad":{"city":0.55,"county":0.55},"Chula Vista":{"city":0.55,"county":0.55},"Coronado":{"city":0.55,"county":0.55},"Del Mar":{"city":0.55,"county":0.55},"El Cajon":{"city":0.55,"county":0.55},"Encinitas":{"city":0.55,"county":0.55},"Escondido":{"city":0.55,"county":0.55},"Imperial Beach":{"city":0.55,"county":0.55},"La Mesa":{"city":0.55,"county":0.55},"Lemon Grove":{"city":0.55,"county":0.55},"National City":{"city":0.55,"county":0.55},"Oceanside":{"city":0.55,"county":0.55},"Poway":{"city":0.55,"county":0.55},"San Diego":{"city":0.55,"county":0.55},"San Marcos":{"city":0.55,"county":0.55},"Santee":{"city":0.55,"county":0.55},"Solana Beach":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Vista":{"city":0.55,"county":0.55}},"San Francisco County":{"San Francisco":{"city":0,"county":0},"Unincorporated / County Only":{"city":0,"county":1.1}},"San Joaquin County":{"Escalon":{"city":0.55,"county":0.55},"Lathrop":{"city":0.55,"county":0.55},"Lodi":{"city":0.55,"county":0.55},"Manteca":{"city":0.55,"county":0.55},"Ripon":{"city":0.55,"county":0.55},"Stockton":{"city":0.55,"county":0.55},"Tracy":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"San Luis Obispo County":{"Arroyo Grande":{"city":0.55,"county":0.55},"Atascadero":{"city":0.55,"county":0.55},"El Paso De Robles":{"city":0.55,"county":0.55},"Grover Beach":{"city":0.55,"county":0.55},"Morro Bay":{"city":0.55,"county":0.55},"Pismo Beach":{"city":0.55,"county":0.55},"San Luis Obispo":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"San Mateo County":{"Atherton":{"city":0.55,"county":0.55},"Belmont":{"city":0.55,"county":0.55},"Brisbane":{"city":0.55,"county":0.55},"Burlingame":{"city":0.55,"county":0.55},"Colma":{"city":0.55,"county":0.55},"Daly City":{"city":0.55,"county":0.55},"East Palo Alto":{"city":0.55,"county":0.55},"Foster City":{"city":0.55,"county":0.55},"Half Moon Bay":{"city":0.55,"county":0.55},"Hillsborough":{"city":0.55,"county":0.55},"Menlo Park":{"city":0.55,"county":0.55},"Millbrae":{"city":0.55,"county":0.55},"Pacifica":{"city":0.55,"county":0.55},"Portola Valley":{"city":0.55,"county":0.55},"Redwood City":{"city":0.55,"county":0.55},"San Bruno":{"city":0.55,"county":0.55},"San Carlos":{"city":0.55,"county":0.55},"San Mateo":{"city":5.0,"county":1.1},"South San Francisco":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Woodside":{"city":0.55,"county":0.55}},"Santa Barbara County":{"Buellton":{"city":0.55,"county":0.55},"Carpinteria":{"city":0.55,"county":0.55},"Goleta":{"city":0.55,"county":0.55},"Guadalupe":{"city":0.55,"county":0.55},"Lompoc":{"city":0.55,"county":0.55},"Santa Barbara":{"city":0.55,"county":0.55},"Santa Maria":{"city":0.55,"county":0.55},"Solvang":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Santa Clara County":{"Campbell":{"city":0.55,"county":0.55},"Cupertino":{"city":0.55,"county":0.55},"Gilroy":{"city":0.55,"county":0.55},"Los Altos":{"city":0.55,"county":0.55},"Los Altos Hills":{"city":0.55,"county":0.55},"Los Gatos":{"city":0.55,"county":0.55},"Milpitas":{"city":0.55,"county":0.55},"Monte Sereno":{"city":0.55,"county":0.55},"Morgan Hill":{"city":0.55,"county":0.55},"Mountain View":{"city":3.3,"county":1.1},"Palo Alto":{"city":3.3,"county":1.1},"San Jose":{"city":3.3,"county":1.1},"Santa Clara":{"city":0.55,"county":0.55},"Saratoga":{"city":0.55,"county":0.55},"Sunnyvale":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Santa Cruz County":{"Capitola":{"city":0.55,"county":0.55},"Santa Cruz":{"city":0.55,"county":0.55},"Scotts Valley":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Watsonville":{"city":0.55,"county":0.55}},"Shasta County":{"Anderson":{"city":0.55,"county":0.55},"Redding":{"city":0.55,"county":0.55},"Shasta Lake":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Sierra County":{"Loyalton":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Siskiyou County":{"Dorris":{"city":0.55,"county":0.55},"Dunsmuir":{"city":0.55,"county":0.55},"Etna":{"city":0.55,"county":0.55},"Fort Jones":{"city":0.55,"county":0.55},"Montague":{"city":0.55,"county":0.55},"Mount Shasta":{"city":0.55,"county":0.55},"Tulelake":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Weed":{"city":0.55,"county":0.55},"Yreka":{"city":0.55,"county":0.55}},"Solano County":{"Benicia":{"city":0.55,"county":0.55},"Dixon":{"city":0.55,"county":0.55},"Fairfield":{"city":0.55,"county":0.55},"Rio Vista":{"city":0.55,"county":0.55},"Suisun City":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Vacaville":{"city":0.55,"county":0.55},"Vallejo":{"city":3.3,"county":1.1}},"Sonoma County":{"Cloverdale":{"city":0.55,"county":0.55},"Cotati":{"city":1.9,"county":1.1},"Healdsburg":{"city":0.55,"county":0.55},"Petaluma":{"city":2.0,"county":1.1},"Rohnert Park":{"city":0.55,"county":0.55},"Santa Rosa":{"city":2.0,"county":1.1},"Sebastopol":{"city":0.55,"county":0.55},"Sonoma":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Windsor":{"city":0.55,"county":0.55}},"Stanislaus County":{"Ceres":{"city":0.55,"county":0.55},"Hughson":{"city":0.55,"county":0.55},"Modesto":{"city":0.55,"county":0.55},"Newman":{"city":0.55,"county":0.55},"Oakdale":{"city":0.55,"county":0.55},"Patterson":{"city":0.55,"county":0.55},"Riverbank":{"city":0.55,"county":0.55},"Turlock":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Waterford":{"city":0.55,"county":0.55}},"Sutter County":{"Live Oak":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Yuba City":{"city":0.55,"county":0.55}},"Tehama County":{"Corning":{"city":0.55,"county":0.55},"Red Bluff":{"city":0.55,"county":0.55},"Tehama":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Trinity County":{"Unincorporated / County Only":{"city":0,"county":1.1}},"Tulare County":{"Dinuba":{"city":0.55,"county":0.55},"Exeter":{"city":0.55,"county":0.55},"Farmersville":{"city":0.55,"county":0.55},"Lindsay":{"city":0.55,"county":0.55},"Porterville":{"city":0.55,"county":0.55},"Tulare":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Visalia":{"city":0.55,"county":0.55},"Woodlake":{"city":0.55,"county":0.55}},"Tuolumne County":{"Sonora":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Ventura County":{"Camarillo":{"city":0.55,"county":0.55},"Fillmore":{"city":0.55,"county":0.55},"Moorpark":{"city":0.55,"county":0.55},"Ojai":{"city":0.55,"county":0.55},"Oxnard":{"city":0.55,"county":0.55},"Port Hueneme":{"city":0.55,"county":0.55},"San Buenaventura":{"city":0.55,"county":0.55},"Santa Paula":{"city":0.55,"county":0.55},"Simi Valley":{"city":0.55,"county":0.55},"Thousand Oaks":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1}},"Yolo County":{"Davis":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"West Sacramento":{"city":0.55,"county":0.55},"Winters":{"city":0.55,"county":0.55},"Woodland":{"city":1.1,"county":1.1}},"Yuba County":{"Marysville":{"city":0.55,"county":0.55},"Unincorporated / County Only":{"city":0,"county":1.1},"Wheatland":{"city":0.55,"county":0.55}}};
+
+
+// Important Sacramento correction from California transfer tax table:
+// Sacramento City: $2.75 per $1,000; Sacramento County: $1.10 per $1,000.
+if (transferTaxRates["Sacramento County"]) {
+  transferTaxRates["Sacramento County"]["Sacramento"] = { city: 2.75, county: 1.10 };
+}
+
+const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const impoundByClosing = {January:6,February:1,March:2,April:3,May:4,June:5,July:6,August:7,September:8,October:9,November:4,December:5};
+const firstPaymentByClosing = {January:"March",February:"April",March:"May",April:"June",May:"July",June:"August",July:"September",August:"October",September:"November",October:"December",November:"January",December:"February"};
+
+function money(n){return (Number(n)||0).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2});}
+function num(id){const el=document.getElementById(id);return el?Number(el.value)||0:0;}
+function set(id,v){const el=document.getElementById(id);if(el)el.value=v;}
+function sum(ids){return ids.reduce((t,id)=>t+num(id),0);}
+
+function splitAmount(full, split){full=Number(full)||0;if(split==="buyer")return full;if(split==="seller")return 0;if(split==="50")return full/2;return full;}
+function sellerAmount(full, split){full=Number(full)||0;if(split==="buyer")return 0;if(split==="seller")return full;if(split==="50")return full/2;return 0;}
+
+let fullFees = {escrow:1500, ownerTitle:1800, countyTax:0, cityTax:0};
+
+function calcPurchaseEscrowTiered(price){let fee=911;price=Number(price)||0;if(price>100000)fee+=(Math.min(price,500000)-100000)/1000*2.5;if(price>500000)fee+=(Math.min(price,1000000)-500000)/1000*2.25;if(price>1000000)fee+=(price-1000000)/1000*2;return Math.max(fee,911);}
+function calcOwnerTitleTiered(price){price=Number(price)||0;let fee=0;fee+=Math.min(price,100000)/1000*5.5;if(price>100000)fee+=(Math.min(price,500000)-100000)/1000*4.5;if(price>500000)fee+=(Math.min(price,1000000)-500000)/1000*3.5;if(price>1000000)fee+=(price-1000000)/1000*2.75;return Math.max(fee,0);}
+function calcLenderTitleTiered(loan){loan=Number(loan)||0;let fee=0;fee+=Math.min(loan,100000)/1000*3.75;if(loan>100000)fee+=(Math.min(loan,500000)-100000)/1000*3.25;if(loan>500000)fee+=(Math.min(loan,1000000)-500000)/1000*2.75;if(loan>1000000)fee+=(loan-1000000)/1000*2.25;return Math.max(fee,0);}
+
+function fillMonths(){["p_close_month","p_first_payment","r_close_month","r_first_payment"].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=months.map(m=>`<option value="${m}">${m}</option>`).join("");});set("p_close_month","May");set("p_first_payment","July");set("r_close_month","May");set("r_first_payment","July");}
+
+function populateCountyCityDropdowns(){const c=document.getElementById("p_county_name"), city=document.getElementById("p_city_name");if(!c||!city)return;c.innerHTML=Object.keys(transferTaxRates).map(x=>`<option value="${x}">${x}</option>`).join("");if(transferTaxRates["Sacramento County"])c.value="Sacramento County";populateCityDropdown();}
+function populateCityDropdown(){const c=document.getElementById("p_county_name"), city=document.getElementById("p_city_name");if(!c||!city)return;const cities=transferTaxRates[c.value]||{};city.innerHTML=Object.keys(cities).map(x=>`<option value="${x}">${x}</option>`).join("");if(cities["Elk Grove"])city.value="Elk Grove";}
+
+function calcTransferTaxes(){
+  const county = document.getElementById("p_county_name")?.value;
+  const city = document.getElementById("p_city_name")?.value;
+  const rates = transferTaxRates[county]?.[city] || {city:0, county:0};
+  const price = num("p_price");
+
+  // Formula: Purchase Price × Transfer Tax Rate ÷ 1000
+  // Example Sacramento: 500,000 × 2.75 ÷ 1000 = 1,375 city tax
+  // Example Sacramento County: 500,000 × 1.10 ÷ 1000 = 550 county tax
+  fullFees.cityTax = price * (Number(rates.city) || 0) / 1000;
+  fullFees.countyTax = price * (Number(rates.county) || 0) / 1000;
+}
+
+function updateDisplayedSplitAmounts(){set("p_escrow",splitAmount(fullFees.escrow,document.getElementById("p_escrow_split").value).toFixed(2));set("p_owner_title",splitAmount(fullFees.ownerTitle,document.getElementById("p_owner_title_split").value).toFixed(2));set("p_county_tax",splitAmount(fullFees.countyTax,document.getElementById("p_county_tax_split").value).toFixed(2));set("p_city_tax",splitAmount(fullFees.cityTax,document.getElementById("p_city_tax_split").value).toFixed(2));}
+
+function updateInterestDays(prefix){const el=document.getElementById(prefix+"_closing_date");if(!el||!el.value)return;const [y,m,d]=el.value.split("-").map(Number);const dim=new Date(y,m,0).getDate();set(prefix+"_interest_days",Math.max(dim-d+1,0));set(prefix+"_close_month",months[m-1]);set(prefix+"_first_payment",firstPaymentByClosing[months[m-1]]);set(prefix+"_tax_months",impoundByClosing[months[m-1]]);}
+function setDefaultDates(){const t=new Date();const v=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;set("p_closing_date",v);set("r_closing_date",v);updateInterestDays("p");updateInterestDays("r");}
+function updateImpounds(prefix){const close=document.getElementById(prefix+"_close_month").value;set(prefix+"_first_payment",firstPaymentByClosing[close]);set(prefix+"_tax_months",impoundByClosing[close]);}
+
+function renderPurchase(d){document.getElementById("p_summary").innerHTML=`
+<div class="sumrow"><span>Loan Amount</span><strong>${money(d.loan)}</strong></div>
+<div class="sumrow"><span>Lender / Loan Fees</span><strong>${money(d.loanFees)}</strong></div>
+<div class="sumrow"><span>Buyer Escrow / Title / Transfer Share</span><strong>${money(d.buyerTitleFees)}</strong></div>
+<div class="sumrow"><span>Seller Paid Items</span><strong>${money(d.sellerTitleFees)}</strong></div>
+<div class="sumrow"><span>Property Tax Impounds</span><strong>${d.escrowWaived?"Waived":money(d.taxImpounds)}</strong></div>
+<div class="sumrow"><span>Home Insurance Impounds</span><strong>${d.escrowWaived?"Waived":money(d.insImpounds)}</strong></div>
+<div class="sumrow"><span>Prepaid Interest (${d.interestDays || num("p_interest_days")} days)</span><strong>${money(d.prepaidInterest)}</strong></div>
+<div class="sumrow"><span>Lender Credit</span><strong>-${money(d.lenderCredit)}</strong></div>
+${d.statewideCredit>0?`<div class="sumrow"><span>Statewide Realty & Mortgage Credit</span><strong>-${money(d.statewideCredit)}</strong></div>`:""}
+<div class="sumrow"><span>Daily Interest</span><strong>${money(d.dailyInterest)}</strong></div>`;document.getElementById("p_total").textContent=money(d.total);
+document.getElementById("p_seller_total").textContent=money(d.sellerTitleFees);}
+
+function renderRefi(d){
+  document.getElementById("r_summary").innerHTML=`
+<div class="sumrow"><span>New Loan Amount</span><strong>${money(d.loan)}</strong></div>
+<div class="sumrow"><span>Lender / Loan Fees</span><strong>${money(d.loanFees)}</strong></div>
+<div class="sumrow"><span>Escrow / Title Fees</span><strong>${money(d.titleFees)}</strong></div>
+<div class="sumrow"><span>Property Tax Impounds</span><strong>${d.escrowWaived?"Waived":money(d.taxImpounds)}</strong></div>
+<div class="sumrow"><span>Home Insurance Impounds</span><strong>${d.escrowWaived?"Waived":money(d.insImpounds)}</strong></div>
+<div class="sumrow"><span>Prepaid Interest - Current Loan (${d.currentDays} days)</span><strong>${money(d.oldPrepaid || 0)}</strong></div>
+<div class="sumrow"><span>Prepaid Interest - New Loan (${d.newDays} days)</span><strong>${money(d.prepaidInterest || 0)}</strong></div>
+<div class="sumrow"><span>Lender Credit</span><strong>-${money(d.lenderCredit)}</strong></div>`;
+  document.getElementById("r_total").textContent=money(d.total);
+
+  const box=document.getElementById("r_cash_box");
+  const label=document.getElementById("r_cash_label");
+  const amt=document.getElementById("r_cash_amount");
+  const refiType=document.getElementById("r_type")?.value;
+  if(box && label && amt){
+    if(refiType === "cash_out"){
+      box.style.display="block";
+      box.className="cashBox green";
+      label.textContent="Cash-Out After Paying Existing Loan & Closing Costs";
+      amt.textContent=money(Math.max(d.cashOutAmount,0));
+    }else{
+      box.style.display="none";
+    }
+  }
+}
+function calcPurchase(){const price=num("p_price"),down=num("p_down"),loan=Math.max(price-down,0);set("p_loan",loan.toFixed(2));const rate=num("p_rate")/100;const loanFees=sum(["p_origination","p_underwriting","p_credit","p_appraisal"]);
+if(document.getElementById("p_title_calc").value==="tiered"){fullFees.escrow=calcPurchaseEscrowTiered(price);fullFees.ownerTitle=calcOwnerTitleTiered(price);set("p_lender_title",calcLenderTitleTiered(loan).toFixed(2));}
+else{fullFees.escrow=num("p_escrow");fullFees.ownerTitle=num("p_owner_title");}
+calcTransferTaxes();updateDisplayedSplitAmounts();
+const buyerEscrow=splitAmount(fullFees.escrow,document.getElementById("p_escrow_split").value);
+const buyerOwner=splitAmount(fullFees.ownerTitle,document.getElementById("p_owner_title_split").value);
+const buyerCounty=splitAmount(fullFees.countyTax,document.getElementById("p_county_tax_split").value);
+const buyerCity=splitAmount(fullFees.cityTax,document.getElementById("p_city_tax_split").value);
+const sellerTitleFees=sellerAmount(fullFees.escrow,document.getElementById("p_escrow_split").value)+sellerAmount(fullFees.ownerTitle,document.getElementById("p_owner_title_split").value)+sellerAmount(fullFees.countyTax,document.getElementById("p_county_tax_split").value)+sellerAmount(fullFees.cityTax,document.getElementById("p_city_tax_split").value);
+const buyerTitleFees=buyerEscrow+num("p_lender_title")+buyerOwner+num("p_notary")+num("p_tie")+buyerCounty+buyerCity;
+const escrowWaived=document.getElementById("p_escrow_option").value==="waived";document.getElementById("p_impound_fields").classList.toggle("disabled",escrowWaived);
+const taxImpounds=escrowWaived?0:(price*(num("p_tax_rate")/100)/12)*num("p_tax_months");const insImpounds=escrowWaived?0:num("p_ins_monthly")*num("p_ins_months");const dailyInterest=loan*rate/365;const prepaidInterest=dailyInterest*num("p_interest_days");const lenderCredit=num("p_lender_credit");const statewideCredit=document.getElementById("p_statewide_realtor").value==="yes"?price*.01:0;set("p_statewide_credit",statewideCredit.toFixed(2));
+const liabilities = num("p_cc_payoff") + num("p_car_payoff");
+const total=Math.max(loanFees+buyerTitleFees+taxImpounds+insImpounds+prepaidInterest+liabilities-lenderCredit-statewideCredit,0);
+
+renderPurchase({loan,loanFees,buyerTitleFees,sellerTitleFees,taxImpounds,insImpounds,dailyInterest,prepaidInterest,total,escrowWaived,interestDays:num("p_interest_days"),lenderCredit,statewideCredit});}
+
+
+function getRefiInterestDays(){
+  const closingDate = document.getElementById("r_closing_date")?.value;
+  if(!closingDate){
+    return {currentDays:0, newDays:num("r_interest_days")};
+  }
+  const parts = closingDate.split("-").map(Number);
+  const year = parts[0], month = parts[1], day = parts[2];
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  return {
+    currentDays: day,
+    newDays: Math.max(daysInMonth - day, 0)
+  };
+}
+
+function calcRefi(){
+  const loan = num("r_loan");
+  const rate = num("r_rate") / 100;
+
+  const loanFees = sum(["r_origination","r_underwriting","r_credit","r_appraisal"]);
+  const titleFees = sum(["r_escrow","r_lender_title","r_notary"]);
+
+  const escrowWaived = document.getElementById("r_escrow_option").value === "waived";
+  document.getElementById("r_impound_fields").classList.toggle("disabled", escrowWaived);
+
+  const taxImpounds = escrowWaived ? 0 : (num("r_annual_tax") / 12) * num("r_tax_months");
+  const insImpounds = escrowWaived ? 0 : num("r_ins_monthly") * num("r_ins_months");
+
+  const days = getRefiInterestDays();
+
+  const oldLoan = num("r_old_loan");
+  const oldRate = num("r_old_rate") / 100;
+
+  const oldDaily = oldLoan * oldRate / 365;
+  const newDaily = loan * rate / 365;
+
+  const oldPrepaid = oldDaily * days.currentDays;
+  const prepaidInterest = newDaily * days.newDays;
+
+  const lenderCredit = num("r_lender_credit");
+  const liabilities = num("r_cc_payoff") + num("r_car_payoff");
+
+  const total = Math.max(
+    loanFees + titleFees + taxImpounds + insImpounds + prepaidInterest + oldPrepaid + liabilities - lenderCredit,
+    0
+  );
+
+  const existingLoanPayoff = oldLoan;
+  const cashOutAmount = loan - existingLoanPayoff - total;
+
+  renderRefi({
+    loan,
+    loanFees,
+    titleFees,
+    taxImpounds,
+    insImpounds,
+    dailyInterest: newDaily,
+    prepaidInterest,
+    oldPrepaid,
+    total,
+    escrowWaived,
+    currentDays: days.currentDays,
+    newDays: days.newDays,
+    lenderCredit,
+    cashOutAmount,
+    existingLoanPayoff,
+    liabilities
+  });
+}
+function calc(){calcPurchase();calcRefi();}
+function showTab(tab){
+  document.getElementById("purchase").classList.toggle("hidden",tab!=="purchase");
+  document.getElementById("refi").classList.toggle("hidden",tab!=="refi");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".tab")[tab==="purchase"?0:1].classList.add("active");
+}
+
+document.addEventListener("input",calc);
+document.addEventListener("change",e=>{if(e.target.id==="p_county_name"){populateCityDropdown();calcTransferTaxes();}if(e.target.id==="p_city_name")calcTransferTaxes();if(e.target.id==="p_close_month")updateImpounds("p");if(e.target.id==="r_close_month")updateImpounds("r");if(e.target.id==="p_closing_date")updateInterestDays("p");if(e.target.id==="r_closing_date")updateInterestDays("r");calc();});
+document.querySelectorAll(".payChoice input[type='radio']").forEach(r=>{r.addEventListener("change",e=>{set(e.target.closest(".payChoice").dataset.target,e.target.value);updateDisplayedSplitAmounts();calc();});});
+
+fillMonths();populateCountyCityDropdowns();setDefaultDates();calcTransferTaxes();calc();
+</script>
+
+</body></html>
